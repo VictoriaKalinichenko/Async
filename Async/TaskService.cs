@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Async
 {
@@ -8,25 +8,41 @@ namespace Async
     {
         public void GetFactorial(int factorial)
         {
-            Stopwatch timer = new Stopwatch();
-            timer.Start();
-
-            Console.WriteLine($"Thread({Thread.CurrentThread.ManagedThreadId}) started (Now:{DateTime.Now.ToLongTimeString()})");
-            int result = 1;
+            Console.WriteLine($"Thread({Thread.CurrentThread.ManagedThreadId}) started ({factorial})");
             for (int iteration = 1; iteration <= factorial; iteration++)
             {
-                result *= iteration;
-                Console.WriteLine($"Thread({Thread.CurrentThread.ManagedThreadId}) iteration: {iteration} (Now:{DateTime.Now.ToLongTimeString()})");
-                Thread.Sleep(100);
+                Console.WriteLine($"Thread({Thread.CurrentThread.ManagedThreadId}) iteration: {iteration} ({factorial})");
+                Thread.Sleep(200);
             }
+            Console.WriteLine($"Thread({Thread.CurrentThread.ManagedThreadId}) is completed ({factorial})");
+        }
+        
+        public Task GetFactorialTask(int factorial)
+        {
+            return new Task(() =>
+            {
+                Console.WriteLine($"Thread({Thread.CurrentThread.ManagedThreadId}) started ({factorial})");
+                for (int iteration = 1; iteration <= factorial; iteration++)
+                {
+                    Console.WriteLine($"Thread({Thread.CurrentThread.ManagedThreadId}) iteration: {iteration} ({factorial})");
+                    Thread.Sleep(200);
+                }
+                Console.WriteLine($"Thread({Thread.CurrentThread.ManagedThreadId}) is completed ({factorial})");
+            });
+        }
 
-            timer.Stop();
-            TimeSpan timeSpan = timer.Elapsed;            
-            var elapsedTime = string.Format("{0:00}:{1:00}:{2:00}.{3:00}",
-                timeSpan.Hours, timeSpan.Minutes, timeSpan.Seconds,
-                timeSpan.Milliseconds / 10);
+        public void GetFactorial(object state)
+        {
+            var threadState = (ThreadState)state;
 
-            Console.WriteLine($"Thread({Thread.CurrentThread.ManagedThreadId}) Factorial of {factorial} = {result} (Now:{DateTime.Now.ToLongTimeString()}) Elapsed time: {elapsedTime}");
+            Console.WriteLine($"Thread({Thread.CurrentThread.ManagedThreadId}) started ({threadState.Factorial})");
+            for (int iteration = 1; iteration <= threadState.Factorial; iteration++)
+            {
+                Console.WriteLine($"Thread({Thread.CurrentThread.ManagedThreadId}) iteration: {iteration} ({threadState.Factorial})");
+                Thread.Sleep(200);
+            }
+            Console.WriteLine($"Thread({Thread.CurrentThread.ManagedThreadId}) is completed ({threadState.Factorial})");
+            threadState.WaitHandle.Set();
         }
     }
 }

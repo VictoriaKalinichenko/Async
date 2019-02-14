@@ -46,6 +46,7 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TaskService.cs" />
+    <Compile Include="ThreadPoolState.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

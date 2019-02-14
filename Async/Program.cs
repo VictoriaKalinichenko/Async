@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -7,59 +10,66 @@ namespace Async
     class Program
     {
         private readonly static TaskService _taskService = new TaskService();
+        static List<ThreadState> threadStates = new List<ThreadState>
+        {
+            new ThreadState() { Factorial = 4 },
+            new ThreadState() { Factorial = 5 }
+        };
 
         static void Main(string[] args)
         {
-            ExecuteTasks();
-            ExecuteThreads();
-            ExecuteParallels();
+            //ExecuteInAsyncMode();
+            ExecuteThreadPool();
+            //ExecuteParallels();
+            Console.ReadKey();
         }
 
-        static void ExecuteTasks()
+        static async void ExecuteInAsyncMode()
         {
-            Task firstTask = Task.Factory.StartNew(() => _taskService.GetFactorial(13));
-            Task secondTask = Task.Factory.StartNew(() => _taskService.GetFactorial(10));
-            Task thirdTask = Task.Factory.StartNew(() => _taskService.GetFactorial(15));
-            Task fourthTask = Task.Factory.StartNew(() => _taskService.GetFactorial(5));
+            Stopwatch timer = new Stopwatch();
+            timer.Start();
+            Console.WriteLine("Started");
 
-            Task.WaitAll(firstTask, secondTask, thirdTask, fourthTask);
+            Task task = _taskService.GetFactorialTask(5);
+            task.Start();
+
+            _taskService.GetFactorial(4);
+
+            await task;
             Console.WriteLine("All threads are completed");
 
-            Console.ReadKey();
+            timer.Stop();
+            Console.WriteLine($"Elapsed time for executing methods in async mode = {timer.ElapsedMilliseconds}");
             Console.WriteLine();
         }
 
-        static void ExecuteThreads()
+        static void ExecuteThreadPool()
         {
-            Thread firstThread = new Thread(() => _taskService.GetFactorial(13));
-            Thread secondThread = new Thread(() => _taskService.GetFactorial(10));
-            Thread thirdThread = new Thread(() => _taskService.GetFactorial(15));
-            Thread fourthThread = new Thread(() => _taskService.GetFactorial(5));
+            Stopwatch timer = new Stopwatch();
+            timer.Start();
+            Console.WriteLine("Started");
 
-            firstThread.Start();
-            secondThread.Start();
-            thirdThread.Start();
-            fourthThread.Start();
+            var waitCallback = new WaitCallback(_taskService.GetFactorial);
+            ThreadPool.QueueUserWorkItem(new WaitCallback(_taskService.GetFactorial), threadStates[0]);
+            ThreadPool.QueueUserWorkItem(new WaitCallback(_taskService.GetFactorial), threadStates[1]);
+            WaitHandle.WaitAll(threadStates.Select(state => state.WaitHandle).ToArray());
 
-            firstThread.Join();
-            secondThread.Join();
-            thirdThread.Join();
-            fourthThread.Join();
             Console.WriteLine("All threads are completed");
-
-            Console.ReadKey();
-            Console.WriteLine();
+            timer.Stop();
+            Console.WriteLine($"Elapsed time for executing methods in async mode = {timer.ElapsedMilliseconds}");
         }
 
         static void ExecuteParallels()
         {
-            int firstIteration = 11;
-            int lastIteration = 15;
+            Stopwatch timer = new Stopwatch();
+            timer.Start();
+            Console.WriteLine("Started");
 
-            Parallel.For(firstIteration, lastIteration, iteration => _taskService.GetFactorial(iteration));
+            Parallel.For(4, 6, iteration => _taskService.GetFactorial(iteration));
             Console.WriteLine("All threads are completed");
 
-            Console.ReadKey();
+            timer.Stop();
+            Console.WriteLine($"Elapsed time for executing methods in async mode = {timer.ElapsedMilliseconds}");
         }
     }
 }
